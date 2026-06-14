@@ -7,7 +7,14 @@ from apps.groups.models import Group, GroupMembership
 
 
 @transaction.atomic
-def create_group(*, owner, name, description="", base_currency="INR"):
+def create_group(
+    *,
+    owner,
+    name,
+    description="",
+    base_currency="INR",
+    owner_joined_at=None,
+):
     group = Group.objects.create(
         owner=owner,
         name=name,
@@ -18,7 +25,7 @@ def create_group(*, owner, name, description="", base_currency="INR"):
         group=group,
         user=owner,
         role=GroupMembership.Role.OWNER,
-        joined_at=timezone.now(),
+        joined_at=owner_joined_at or timezone.now(),
     )
     return group
 

@@ -1,10 +1,9 @@
-from django.db.models import Q
-from django.utils import timezone
 from rest_framework import decorators, response, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 
 from apps.groups.models import Group, GroupMembership
 from apps.groups.permissions import IsGroupOwnerOrReadOnly
+from apps.groups.selectors import accessible_groups_for
 from apps.groups.serializers import (
     GroupMembershipSerializer,
     GroupSerializer,
@@ -25,22 +24,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "put", "patch", "head", "options")
 
     def get_queryset(self):
-        now = timezone.now()
-        return (
-            Group.objects.filter(
-                Q(owner=self.request.user)
-                | Q(
-                    memberships__user=self.request.user,
-                    memberships__joined_at__lte=now,
-                )
-                & (
-                    Q(memberships__left_at__isnull=True)
-                    | Q(memberships__left_at__gt=now)
-                )
-            )
-            .select_related("owner")
-            .distinct()
-        )
+        return accessible_groups_for(user=self.request.user)
 
     def perform_create(self, serializer):
         self.instance = create_group(

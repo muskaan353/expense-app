@@ -70,3 +70,23 @@ class ExpenseServiceTests(APITestCase):
                 incurred_at=joined_at - timedelta(days=10),
                 splits=[{"user": self.aisha}, {"user": self.sam}],
             )
+
+    def test_owner_membership_can_start_before_group_record_was_created(self):
+        historical_date = timezone.now() - timedelta(days=120)
+        group = create_group(
+            owner=self.aisha,
+            name="Historical flat",
+            owner_joined_at=historical_date - timedelta(days=30),
+        )
+        expense = create_expense(
+            created_by=self.aisha,
+            group=group,
+            paid_by=self.aisha,
+            description="Old rent",
+            amount=Decimal("5000.00"),
+            currency="INR",
+            split_type=Expense.SplitType.EQUAL,
+            incurred_at=historical_date,
+            splits=[{"user": self.aisha}],
+        )
+        self.assertEqual(expense.base_amount, Decimal("5000.00"))

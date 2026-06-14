@@ -1,3 +1,1 @@
-from django.db import models
-
-# Create your models here.
+"""The assistant is stateless; ledger data remains the source of truth."""

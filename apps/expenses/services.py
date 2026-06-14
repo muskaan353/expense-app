@@ -1,10 +1,11 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.expenses.models import Expense, ExpenseSplit
 from apps.groups.models import GroupMembership
+from apps.groups.selectors import accessible_groups_for
 
 
 CENT = Decimal("0.01")
@@ -74,6 +75,8 @@ def create_expense(*, created_by, splits, **data):
     currency = data["currency"]
     exchange_rate = data.get("exchange_rate")
 
+    if not accessible_groups_for(user=created_by).filter(pk=group.pk).exists():
+        raise PermissionDenied("You do not have access to this group.")
     if not _is_member_at(group=group, user=paid_by, moment=incurred_at):
         raise ValidationError({"paid_by_id": "Payer was not a member on this date."})
     for split in splits:

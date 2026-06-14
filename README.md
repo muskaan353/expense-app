@@ -27,6 +27,23 @@ uses SQLite only as a convenient local/test fallback.
 
 Swagger UI is available at `http://127.0.0.1:8000/api/docs/`.
 
+PostgreSQL can be started locally with:
+
+```powershell
+docker compose up -d db
+```
+
+## API areas
+
+- `/api/v1/auth/` registration, JWT login, refresh, logout, and profile
+- `/api/v1/groups/` groups and membership timelines
+- `/api/v1/expenses/` expenses and all supported split strategies
+- `/api/v1/exchange-rates/` explicit currency conversion records
+- `/api/v1/settlements/` payments between members
+- `/api/v1/groups/{id}/balances/` balances, source entries, and suggested payments
+- `/api/v1/imports/` staged CSV imports and anomaly reports
+- `/api/v1/ai-assistant/query/` ledger-grounded balance explanations
+
 ## Project layout
 
 Each domain app keeps transport and business concerns separate through

@@ -1,9 +1,10 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.expenses.services import _is_member_at
+from apps.groups.selectors import accessible_groups_for
 from apps.settlements.models import Settlement
 
 
@@ -16,6 +17,8 @@ def create_settlement(*, created_by, **data):
     currency = data["currency"]
     exchange_rate = data.get("exchange_rate")
 
+    if not accessible_groups_for(user=created_by).filter(pk=group.pk).exists():
+        raise PermissionDenied("You do not have access to this group.")
     for field, user in (("payer_id", payer), ("payee_id", payee)):
         if not _is_member_at(group=group, user=user, moment=settled_at):
             raise ValidationError({field: "User was not a member on this date."})

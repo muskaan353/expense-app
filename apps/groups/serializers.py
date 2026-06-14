@@ -7,6 +7,7 @@ from apps.groups.models import Group, GroupMembership
 class GroupSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(read_only=True)
     base_currency = serializers.CharField(max_length=3)
+    owner_joined_at = serializers.DateTimeField(write_only=True, required=False)
 
     class Meta:
         model = Group
@@ -16,6 +17,7 @@ class GroupSerializer(serializers.ModelSerializer):
             "description",
             "base_currency",
             "owner_id",
+            "owner_joined_at",
             "created_at",
             "updated_at",
             "archived_at",
