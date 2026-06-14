@@ -1,9 +1,13 @@
+from datetime import timedelta
+
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
-from apps.groups.models import Group
+from apps.groups.models import Group, GroupMembership
+from apps.groups.services import add_membership, create_group
 
 
 class GroupApiTests(APITestCase):
@@ -39,3 +43,50 @@ class GroupApiTests(APITestCase):
         group = Group.objects.create(name="Private", owner=self.other_user)
         response = self.client.get(reverse("group-detail", args=[group.id]))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_group_creation_records_owner_membership(self):
+        group = create_group(owner=self.owner, name="Timeline")
+        membership = group.memberships.get(user=self.owner)
+        self.assertEqual(membership.role, GroupMembership.Role.OWNER)
+        self.assertIsNone(membership.left_at)
+
+    def test_active_member_can_read_group_but_past_member_cannot(self):
+        now = timezone.now()
+        group = create_group(owner=self.owner, name="Flatmates")
+        membership = add_membership(
+            group=group,
+            user=self.other_user,
+            role=GroupMembership.Role.MEMBER,
+            joined_at=now - timedelta(days=10),
+        )
+
+        self.client.force_authenticate(self.other_user)
+        self.assertEqual(
+            self.client.get(reverse("group-detail", args=[group.id])).status_code,
+            status.HTTP_200_OK,
+        )
+
+        membership.left_at = now - timedelta(days=1)
+        membership.save(update_fields=("left_at",))
+        self.assertEqual(
+            self.client.get(reverse("group-detail", args=[group.id])).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_overlapping_membership_period_is_rejected(self):
+        now = timezone.now()
+        group = create_group(owner=self.owner, name="Flatmates")
+        add_membership(
+            group=group,
+            user=self.other_user,
+            role=GroupMembership.Role.MEMBER,
+            joined_at=now - timedelta(days=20),
+            left_at=now - timedelta(days=5),
+        )
+        with self.assertRaisesMessage(Exception, "overlaps"):
+            add_membership(
+                group=group,
+                user=self.other_user,
+                role=GroupMembership.Role.MEMBER,
+                joined_at=now - timedelta(days=10),
+            )
