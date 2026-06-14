@@ -548,6 +548,164 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
+  /api/v1/import-issues/:
+    get:
+      operationId: api_v1_import_issues_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImportIssueList'
+          description: ''
+  /api/v1/import-issues/{id}/:
+    get:
+      operationId: api_v1_import_issues_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this import issue.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportIssue'
+          description: ''
+    patch:
+      operationId: api_v1_import_issues_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this import issue.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedImportIssue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedImportIssue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedImportIssue'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportIssue'
+          description: ''
+  /api/v1/imports/:
+    get:
+      operationId: api_v1_imports_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImportSessionList'
+          description: ''
+    post:
+      operationId: api_v1_imports_create
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportSessionCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImportSessionCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportSessionCreate'
+          description: ''
+  /api/v1/imports/{id}/:
+    get:
+      operationId: api_v1_imports_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this import session.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportSession'
+          description: ''
+  /api/v1/imports/{id}/report/:
+    get:
+      operationId: api_v1_imports_report_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this import session.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportSession'
+          description: ''
   /api/v1/settlements/:
     get:
       operationId: api_v1_settlements_list
@@ -736,7 +894,7 @@ components:
           type: string
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/ExpenseStatusEnum'
           readOnly: true
         created_by_id:
           type: integer
@@ -814,7 +972,7 @@ components:
         notes:
           type: string
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ExpenseStatusEnum'
         created_by_id:
           type: integer
           readOnly: true
@@ -884,6 +1042,14 @@ components:
           pattern: ^-?\d{0,10}(?:\.\d{0,4})?$
       required:
       - user_id
+    ExpenseStatusEnum:
+      enum:
+      - active
+      - void
+      type: string
+      description: |-
+        * `active` - Active
+        * `void` - Void
     Group:
       type: object
       properties:
@@ -949,6 +1115,147 @@ components:
           type: string
       required:
       - status
+    ImportIssue:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        row_number:
+          type: integer
+          readOnly: true
+          nullable: true
+        issue_code:
+          type: string
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        field_name:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        raw_value:
+          type: string
+          readOnly: true
+        proposed_action:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/ImportIssueStatusEnum'
+        resolution_notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        session:
+          type: integer
+          readOnly: true
+        row:
+          type: integer
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - field_name
+      - id
+      - issue_code
+      - message
+      - proposed_action
+      - raw_value
+      - row
+      - row_number
+      - session
+      - severity
+    ImportIssueStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - resolved
+      type: string
+      description: |-
+        * `pending` - Pending review
+        * `approved` - Approved action
+        * `rejected` - Rejected action
+        * `resolved` - Resolved
+    ImportSession:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        group_id:
+          type: integer
+          readOnly: true
+        uploaded_by_id:
+          type: integer
+          readOnly: true
+        original_filename:
+          type: string
+          maxLength: 255
+        checksum_sha256:
+          type: string
+          maxLength: 64
+        status:
+          $ref: '#/components/schemas/ImportSessionStatusEnum'
+        row_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        issue_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        report: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - checksum_sha256
+      - created_at
+      - group_id
+      - id
+      - original_filename
+      - uploaded_by_id
+    ImportSessionCreate:
+      type: object
+      properties:
+        group_id:
+          type: integer
+        file:
+          type: string
+          format: uri
+      required:
+      - file
+      - group_id
+    ImportSessionStatusEnum:
+      enum:
+      - processing
+      - needs_review
+      - ready
+      - approved
+      - rejected
+      - failed
+      type: string
+      description: |-
+        * `processing` - Processing
+        * `needs_review` - Needs review
+        * `ready` - Ready
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `failed` - Failed
     Logout:
       type: object
       properties:
@@ -1045,6 +1352,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Group'
+    PaginatedImportIssueList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportIssue'
+    PaginatedImportSessionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportSession'
     PaginatedSettlementReadList:
       type: object
       required:
@@ -1096,6 +1449,50 @@ components:
         archived_at:
           type: string
           format: date-time
+          readOnly: true
+          nullable: true
+    PatchedImportIssue:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        row_number:
+          type: integer
+          readOnly: true
+          nullable: true
+        issue_code:
+          type: string
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        field_name:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        raw_value:
+          type: string
+          readOnly: true
+        proposed_action:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/ImportIssueStatusEnum'
+        resolution_notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        session:
+          type: integer
+          readOnly: true
+        row:
+          type: integer
           readOnly: true
           nullable: true
     Register:
@@ -1219,6 +1616,14 @@ components:
       - payee_id
       - payer_id
       - settled_at
+    SeverityEnum:
+      enum:
+      - warning
+      - error
+      type: string
+      description: |-
+        * `warning` - Warning
+        * `error` - Error
     SplitTypeEnum:
       enum:
       - equal
@@ -1231,14 +1636,6 @@ components:
         * `exact` - Exact amounts
         * `percentage` - Percentage
         * `shares` - Shares
-    StatusEnum:
-      enum:
-      - active
-      - void
-      type: string
-      description: |-
-        * `active` - Active
-        * `void` - Void
     TokenRefresh:
       type: object
       properties:

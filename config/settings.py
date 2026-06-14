@@ -89,6 +89,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -116,6 +118,12 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Backend API for temporal group membership, shared expenses, imports, and explainable balances.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {
+        "ExpenseStatusEnum": "apps.expenses.models.Expense.Status",
+        "ImportSessionStatusEnum": "apps.imports.models.ImportSession.Status",
+        "ImportRowStatusEnum": "apps.imports.models.ImportRow.Status",
+        "ImportIssueStatusEnum": "apps.imports.models.ImportIssue.Status",
+    },
 }
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
