@@ -1,3 +1,1 @@
-from django.db import models
-
-# Create your models here.
+"""Balances are derived from immutable ledger records, not stored separately."""

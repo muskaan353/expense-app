@@ -319,6 +319,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
+  /api/v1/groups/{group_id}/balances/:
+    get:
+      operationId: api_v1_groups_balances_retrieve
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupBalance'
+          description: ''
   /api/v1/groups/{id}/:
     get:
       operationId: api_v1_groups_retrieve
@@ -528,8 +548,108 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
+  /api/v1/settlements/:
+    get:
+      operationId: api_v1_settlements_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSettlementReadList'
+          description: ''
+    post:
+      operationId: api_v1_settlements_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settlement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Settlement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Settlement'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settlement'
+          description: ''
+  /api/v1/settlements/{id}/:
+    get:
+      operationId: api_v1_settlements_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this settlement.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRead'
+          description: ''
 components:
   schemas:
+    BalanceEntry:
+      type: object
+      properties:
+        kind:
+          type: string
+        reference_id:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - description
+      - kind
+      - reference_id
+    Debt:
+      type: object
+      properties:
+        payer_id:
+          type: integer
+        payee_id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - payee_id
+      - payer_id
     EmailTokenObtainPair:
       type: object
       properties:
@@ -802,6 +922,26 @@ components:
       - name
       - owner_id
       - updated_at
+    GroupBalance:
+      type: object
+      properties:
+        group_id:
+          type: integer
+        currency:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberBalance'
+        suggested_settlements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Debt'
+      required:
+      - currency
+      - group_id
+      - members
+      - suggested_settlements
     HealthCheckResponse:
       type: object
       properties:
@@ -816,6 +956,26 @@ components:
           type: string
       required:
       - refresh
+    MemberBalance:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        display_name:
+          type: string
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceEntry'
+      required:
+      - balance
+      - display_name
+      - entries
+      - user_id
     PaginatedExchangeRateList:
       type: object
       required:
@@ -885,6 +1045,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Group'
+    PaginatedSettlementReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRead'
     PatchedGroup:
       type: object
       properties:
@@ -931,6 +1114,111 @@ components:
       - display_name
       - email
       - password
+    Settlement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        group_id:
+          type: integer
+        payer_id:
+          type: integer
+        payee_id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 3
+        base_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        exchange_rate_id:
+          type: integer
+          nullable: true
+        settled_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+        created_by_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - base_amount
+      - created_at
+      - created_by_id
+      - currency
+      - group_id
+      - id
+      - payee_id
+      - payer_id
+      - settled_at
+    SettlementRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        group_id:
+          type: integer
+          readOnly: true
+        payer_id:
+          type: integer
+          readOnly: true
+        payee_id:
+          type: integer
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+          maxLength: 3
+        base_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        exchange_rate_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        settled_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+        created_by_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - base_amount
+      - created_at
+      - created_by_id
+      - currency
+      - exchange_rate_id
+      - group_id
+      - id
+      - payee_id
+      - payer_id
+      - settled_at
     SplitTypeEnum:
       enum:
       - equal
