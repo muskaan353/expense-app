@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: AI-Powered Smart Expense Sharing API
+  version: 1.0.0
+  description: Backend API for temporal group membership, shared expenses, imports,
+    and explainable balances.
+paths:
+  /api/health/:
+    get:
+      operationId: api_health_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+          description: ''
+components:
+  schemas:
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
